@@ -4,6 +4,57 @@ All notable changes to FilsPay. Dates are deploy dates (Asia/Bahrain).
 Versions are the API image tag; settlement and reporting are versioned with
 it. Format loosely follows Keep a Changelog.
 
+## [Unreleased] - 2026-10-30
+
+The Handover audit round: every change since the handover tip `8b58b0f`
+(re-authored under the corrected identity). Registries: open findings in
+docs/bugs/ (one file per finding); fixed-work detail in docs/EXPLANATIONS.md.
+
+### Added
+- **Refunds feature, end to end** (`5fe1d4a`, `f8846e8`): `POST /v1/refunds`
+  wired to the locked `processRefund` (captured-based ceiling, single
+  transaction + `FOR UPDATE` across the acquirer call, net-of-discount fee
+  reversal, reason defaulting); `refund.succeeded` webhook (envelope case +
+  eligibility) ; reporting refund rollups + matview refresh (`a82656d`);
+  merchant web RefundDrawer (`327e5ea`).
+- Webhook hardening: sign the exact bytes sent (`e0ddf3b`); dispatcher LISTEN
+  reconnect on channel drops (`a808bf7`); payout-disbursement dedup.
+- Demo tooling: `scripts/demo/admin-login.hurl` (`c8d6d97`).
+
+### Fixed
+- Fresh database migrates cleanly (0054 view, 0055 chart inserts; `0b7e9f4`),
+  migrations 0073–0077 added.
+- Money/ledger: settlement splits exact (largest-remainder), scheme residue
+  posted at close, MDR recalc closed-only, BIGINT counters, balance button
+  uses the ledger rollup (`3ce9fa1`); CSV import parses BD correctly (`5d94b0b`);
+  fee display resolves the effective rate; payout estimate + volume counters
+  fixed.
+- Payments: refund ceiling + FP-209 concurrency (`f8846e8`); capture
+  idempotency hash includes the transaction (`5d94b0b`); payment links:
+  merchant-scoped cancel, server-clock expiry gate, no phantom 200 on a lost
+  finalize (`165a6d4`).
+- Reporting: consumes `refund.succeeded` and `settlement.paid`, scoped child
+  reports, one rebuild path, authed export-summary (`a82656d`).
+- Web: dashboard CORS at runtime + root redirect (`33f0201`).
+- Seed: alpha booked at the effective fee rate, test-mode merchants isolated,
+  poison `production_seed.sql` removed (`7298d50`).
+
+### Security
+- Merchant login requires OTP: pending sessions authenticate nothing
+  (`0446569`).
+- Acquirer callback notes deduped per `(transaction_id, callback_id)`;
+  outcome/occurredAt validated; shipped env requires callback signatures
+  (`0446569`).
+- Admin gates: credit creation requires finance/super_admin; impersonation
+  is read-only support (`1505ffa`).
+
+### Changed
+- Ops: Dockerfiles added + compose token/env wiring (`fbddb5c`, `f2df131`);
+  README migrate-wait hardening.
+- Docs: consolidated guide (`docs/README.md`), per-bug ledger
+  (`docs/bugs/`), tutorial (`docs/TEACHING.md` removed into the guide),
+  corrected lore (AGENTS.md money/token claims), incidents 2026-10-30.
+
 ## [1.9.2] - 2026-09-12
 
 ### Changed

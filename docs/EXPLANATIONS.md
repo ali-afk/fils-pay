@@ -40,8 +40,12 @@ Notation: ids match the case-file bug list (B1–B24), the refund feature
   "where do the missing fils go?"), and balance-cache drift.
 - Fix: a Go `AllocateRemainder` (largest-remainder, ties by ascending child
   index) used by both `ChildShares` and `PayoutSplitBatch`; `ApplyPayout`
-  receives the exact net. `NetPayableFils` is now plain integer
-  `gross − fee`. (`c-go`)
+  receives the exact net. (`c-go`)
+- ⚠ Still open — correction to this entry: the **second mechanism** of this
+  bug, `NetPayableFils` in `payable.go` computing net payout through
+  `float32`/`math.Round`, is **NOT fixed** and was over-claimed here. It is
+  tracked as C-1 in `docs/bugs/C-1.md` and affects every payout above 2^24
+  fils.
 
 ### B3 — Scheme statement a few fils higher than ours; residue never posted
 - Wrong: (1) CloseBatch never posted the ADR-0002 residue group
@@ -435,12 +439,36 @@ nets to zero by 0007's deferred constraint — verified on a live refund.
 
 ---
 
-## Commit list
+## Runtime & ops fixes (added after the audit)
+
+- **B25 — Dashboard/panel CORS blocked at runtime** (`33f0201`): the API had
+  zero CORS support while both SPAs call it cross-origin with cookies
+  (`localhost:5173/:5174 → :3000`) — every panel request was browser-blocked
+  (preflight 404). Fixed with a dependency-free `fastify-plugin` CORS hook
+  (allow-list via `CORS_ALLOW_ORIGINS`, credentials, 204 preflights) + tests.
+- **B26 — apps/web `/` 404** (`33f0201`): the router had no root route
+  ("No routes matched location '/'"); added a redirect to `/dashboard`.
+  The admin console already handled its root.
+- **B27 — Webhook dispatcher LISTEN never reconnects** (`a808bf7`): a Postgres
+  blip killed the notification channel for the process's life and logged
+  `LISTEN client error` forever; it now reconnects at the poll cadence.
+- **Ops/deploy** (`fbddb5c`, `f2df131`): missing Dockerfiles added, compose
+  token/env wiring, README migrate-wait hardening. (A `POSTGRES_URL`
+  remote-DB override was drafted in `5e83c61` but that commit was unwound
+  from main — remote-DB support currently means editing each service's
+  `DATABASE_URL` in `ops/docker-compose.yml`.)
+- **Demo tooling** (`c8d6d97`): `scripts/demo/admin-login.hurl` (hurl) — one
+  command for the admin login → OTP → authed-call flow.
+
+## Commit register
+
+The full commit set with final hashes lives in `CHANGELOG.md` (`[Unreleased]`
+entry). Open findings: `docs/bugs/`. The five commits listed below are
+retained as the pre-audit core:
 ```
 0b7e9f4 fix(db): a fresh database migrates cleanly again
 f8846e8 fix(refunds): let exactly one refund through, on the captured total
 8938ae8 docs(plans): add handover hackathon plan
 0446569 fix(auth, callbacks): pending sessions authenticate nothing; callbacks dedupe
 5fe1d4a feat(refunds): wire POST /v1/refunds, ship refund.succeeded webhooks
-The full commit set is listed in `docs/ENGINEERING.md` §6.
 ```

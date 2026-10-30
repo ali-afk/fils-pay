@@ -1,6 +1,6 @@
 /**
  * Unit tests for webhook delivery archive capture and restore, against a
- * real, migrated Postgres (run `npm run migrate` first).
+ * real, migrated Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";

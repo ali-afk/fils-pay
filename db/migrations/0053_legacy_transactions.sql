@@ -14,5 +14,5 @@ CREATE TABLE legacy_transactions (
 );
 
 -- MK: DO NOT DROP. the seed inserts rows here with FKs to 5 alpha
--- transactions; dropping it breaks npm run seed.
+-- transactions; dropping it breaks bun run seed.
 -- FH: dropped it locally, seed still passed (maybe I had an old seed)

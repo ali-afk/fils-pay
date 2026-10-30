@@ -15,6 +15,17 @@ function bhd(fils: number): string {
   return `${formatBhd(toFils(fils, { allowNegative: true }))} BHD`;
 }
 
+/** Live unit preview for the raw-fils balance-adjustment input (A6):
+ *  "50000 fils = 50.000 BHD", or a guidance line when the value is not a
+ *  whole number of fils. */
+function filsPreview(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  const fils = Number(trimmed);
+  if (!Number.isInteger(fils)) return "Enter a whole number of fils.";
+  return `${fils} fils = ${bhd(fils)}`;
+}
+
 // browser local date not bahrain, fine for bahrain staff — am
 function todayIso(): string {
   const now = new Date();
@@ -33,7 +44,14 @@ export function MerchantDetailPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const [kycNotes, setKycNotes] = useState("");
-  const [busy, setBusy] = useState(false);
+  /** Per-action busy flags (A5): one action's in-flight request must not
+   *  freeze the page's other controls. */
+  const [kycBusy, setKycBusy] = useState(false);
+  const [rotateBusy, setRotateBusy] = useState(false);
+  const [adjustBusy, setAdjustBusy] = useState(false);
+  const [creditBusy, setCreditBusy] = useState(false);
+  const [recomputeBusy, setRecomputeBusy] = useState(false);
+  const [impersonationBusy, setImpersonationBusy] = useState(false);
 
   /** Which key the operator has asked to rotate and not yet confirmed. */
   const [pendingRotation, setPendingRotation] = useState<string | null>(null);
@@ -68,7 +86,7 @@ export function MerchantDetailPage() {
 
   async function handleKycReview(outcome: "approved" | "rejected"): Promise<void> {
     if (!id) return;
-    setBusy(true);
+    setKycBusy(true);
     setActionError(null);
     setNotice(null);
     try {
@@ -86,14 +104,14 @@ export function MerchantDetailPage() {
     } catch (err) {
       setActionError(describeError(err));
     } finally {
-      setBusy(false);
+      setKycBusy(false);
     }
   }
 
   /** The old key keeps working for a 24h overlap window, then stops. */
   async function handleRotate(keyId: string): Promise<void> {
     if (!id) return;
-    setBusy(true);
+    setRotateBusy(true);
     setActionError(null);
     setNotice(null);
     try {
@@ -107,7 +125,7 @@ export function MerchantDetailPage() {
     } catch (err) {
       setActionError(describeError(err));
     } finally {
-      setBusy(false);
+      setRotateBusy(false);
     }
   }
 
@@ -120,7 +138,7 @@ export function MerchantDetailPage() {
       setActionError("Enter a non-zero whole number of fils.");
       return;
     }
-    setBusy(true);
+    setAdjustBusy(true);
     setActionError(null);
     setNotice(null);
     try {
@@ -136,14 +154,14 @@ export function MerchantDetailPage() {
     } catch (err) {
       setActionError(describeError(err));
     } finally {
-      setBusy(false);
+      setAdjustBusy(false);
     }
   }
 
   async function handleIssueCredit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (!id) return;
-    setBusy(true);
+    setCreditBusy(true);
     setActionError(null);
     setNotice(null);
     try {
@@ -171,13 +189,13 @@ export function MerchantDetailPage() {
     } catch (err) {
       setActionError(err instanceof RangeError ? err.message : describeError(err));
     } finally {
-      setBusy(false);
+      setCreditBusy(false);
     }
   }
 
   async function handleRecomputeStatuses(): Promise<void> {
     if (!id) return;
-    setBusy(true);
+    setRecomputeBusy(true);
     setActionError(null);
     setNotice(null);
     try {
@@ -190,7 +208,7 @@ export function MerchantDetailPage() {
     } catch (err) {
       setActionError(describeError(err));
     } finally {
-      setBusy(false);
+      setRecomputeBusy(false);
     }
   }
 
@@ -198,7 +216,7 @@ export function MerchantDetailPage() {
   // FH: different cookie names (fp_sid vs fp_impersonation), can't repro
   async function handleImpersonate(): Promise<void> {
     if (!id || !detail) return;
-    setBusy(true);
+    setImpersonationBusy(true);
     setActionError(null);
     setNotice(null);
     try {
@@ -215,7 +233,7 @@ export function MerchantDetailPage() {
     } catch (err) {
       setActionError(describeError(err));
     } finally {
-      setBusy(false);
+      setImpersonationBusy(false);
     }
   }
 
@@ -248,6 +266,63 @@ export function MerchantDetailPage() {
       <p className="admin-muted">
         <code>{merchant.id}</code>
       </p>
+
+      {/* A4: impersonation entry lives with the merchant identity, not at
+          the bottom of the page, and asks before it starts. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          margin: "1rem 0",
+          padding: "0.75rem 1rem",
+          border: "1px solid #7a0016",
+          background: "#fff6f6",
+        }}
+      >
+        <div>
+          <strong>View as merchant</strong>
+          <p className="admin-muted" style={{ margin: "0.25rem 0 0" }}>
+            Starts a short-lived, audited impersonation grant. It always acts with this
+            merchant&apos;s least-privileged <code>support</code> role — never with your admin role
+            — and it expires on its own. A banner stays on screen until you exit it.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={impersonationBusy}
+          style={{
+            marginLeft: "auto",
+            fontWeight: 700,
+            color: "#7a0016",
+            borderColor: "#7a0016",
+            background: "#fff",
+          }}
+          onClick={() => {
+            if (
+              !window.confirm(
+                `Start an impersonation session as ${merchant.displayName}? You'll enter the ` +
+                  "merchant dashboard acting with the merchant's least-privileged support role, " +
+                  "not your admin role. A banner stays on screen until you exit it.",
+              )
+            ) {
+              return;
+            }
+            void handleImpersonate();
+          }}
+        >
+          {impersonationBusy ? "Starting..." : "View as merchant"}
+        </button>
+      </div>
+      {impersonationUrl ? (
+        <p>
+          Your browser blocked the new tab —{" "}
+          <a href={impersonationUrl} target="_blank" rel="noreferrer">
+            open the merchant dashboard
+          </a>
+          .
+        </p>
+      ) : null}
 
       {actionError ? <p className="admin-error">{actionError}</p> : null}
       {notice ? <p className="admin-notice">{notice}</p> : null}
@@ -332,6 +407,9 @@ export function MerchantDetailPage() {
               placeholder="50000"
             />
           </label>
+          {filsPreview(adjustDeltaFils) ?? (
+            <p className="admin-muted">1000 fils = 1.000 BHD. Example: 50000 fils = 50.000 BHD.</p>
+          )}
           <label>
             Reason
             <input
@@ -343,10 +421,10 @@ export function MerchantDetailPage() {
           <div>
             <button
               type="button"
-              disabled={busy || !adjustDeltaFils.trim() || !adjustReason.trim()}
+              disabled={adjustBusy || !adjustDeltaFils.trim() || !adjustReason.trim()}
               onClick={() => void handleAdjustBalance()}
             >
-              Adjust balance
+              {adjustBusy ? "Adjusting..." : "Adjust balance"}
             </button>
           </div>
         </div>
@@ -410,8 +488,8 @@ export function MerchantDetailPage() {
             Memo (optional)
             <textarea value={creditMemo} onChange={(e) => setCreditMemo(e.target.value)} rows={2} />
           </label>
-          <button type="submit" disabled={busy}>
-            {busy ? "Submitting..." : "Issue credit"}
+          <button type="submit" disabled={creditBusy}>
+            {creditBusy ? "Submitting..." : "Issue credit"}
           </button>
         </form>
       </RequireRole>
@@ -435,10 +513,10 @@ export function MerchantDetailPage() {
             <textarea value={kycNotes} onChange={(e) => setKycNotes(e.target.value)} rows={3} />
           </label>
           <div>
-            <button type="button" disabled={busy} onClick={() => void handleKycReview("approved")}>
+            <button type="button" disabled={kycBusy} onClick={() => void handleKycReview("approved")}>
               Approve KYC
             </button>{" "}
-            <button type="button" disabled={busy} onClick={() => void handleKycReview("rejected")}>
+            <button type="button" disabled={kycBusy} onClick={() => void handleKycReview("rejected")}>
               Reject KYC
             </button>
           </div>
@@ -548,8 +626,8 @@ export function MerchantDetailPage() {
               onChange={(e) => setRotationLabel(e.target.value)}
             />
           </label>
-          <button type="button" disabled={busy} onClick={() => void handleRotate(pendingRotation)}>
-            {busy ? "Rotating..." : "Yes, rotate it"}
+          <button type="button" disabled={rotateBusy} onClick={() => void handleRotate(pendingRotation)}>
+            {rotateBusy ? "Rotating..." : "Yes, rotate it"}
           </button>{" "}
           <button
             type="button"
@@ -636,29 +714,11 @@ export function MerchantDetailPage() {
           </p>
         }
       >
-        <button type="button" disabled={busy} onClick={() => void handleRecomputeStatuses()}>
-          {busy ? "Working..." : "Recompute statuses"}
+        <button type="button" disabled={recomputeBusy} onClick={() => void handleRecomputeStatuses()}>
+          {recomputeBusy ? "Working..." : "Recompute statuses"}
         </button>
       </RequireRole>
 
-      <h2>View as merchant</h2>
-      <p className="admin-muted">
-        Starts a short-lived, audited impersonation grant. It always acts with this merchant&apos;s
-        least-privileged <code>support</code> role — never with your admin role — and it expires on
-        its own. A banner stays on screen until you exit it.
-      </p>
-      <button type="button" disabled={busy} onClick={() => void handleImpersonate()}>
-        View as merchant
-      </button>
-      {impersonationUrl ? (
-        <p>
-          Your browser blocked the new tab —{" "}
-          <a href={impersonationUrl} target="_blank" rel="noreferrer">
-            open the merchant dashboard
-          </a>
-          .
-        </p>
-      ) : null}
     </section>
   );
 }

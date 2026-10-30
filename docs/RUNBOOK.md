@@ -66,7 +66,7 @@ Analytics lag the write model by up to a poll interval; every response
 carries `readModelAsOf`. If it's stuck:
 
 ```bash
-npx tsx apps/reporting/src/index.ts catch-up
+bun apps/reporting/src/index.ts catch-up
 ```
 
 `catch-up` shares the worker's cursor, so it's safe to run while the worker
@@ -134,7 +134,7 @@ the intended single-use gate.
 ## Resetting a non-production environment
 
 ```bash
-npm run migrate && npm run seed
+bun run migrate && bun run seed
 ```
 
 The seed truncates and regenerates the fixture tables it owns and

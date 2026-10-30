@@ -12,7 +12,7 @@ import { getCurrentFeeScheduleForDisplay } from "./currentFeeScheduleDisplay.js"
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "currentFeeScheduleDisplay.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "currentFeeScheduleDisplay.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

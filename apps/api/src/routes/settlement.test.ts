@@ -10,8 +10,8 @@
  * out to the
  * compiled Go binary. Chosen because it keeps this test suite
  * self-contained and independent of whether a Go toolchain/binary is
- * available in whatever environment runs `npm test` — the same posture
- * `npm test` already has for every other TS suite in this repo.
+ * available in whatever environment runs `bun test` — the same posture
+ * `bun test` already has for every other TS suite in this repo.
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -27,7 +27,7 @@ import { sha256Hex, randomToken } from "../lib/crypto.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "settlement.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "settlement.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

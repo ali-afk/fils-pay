@@ -113,12 +113,12 @@ func TestEffectiveMdrBpsAt_SeededScheduleFixture(t *testing.T) {
 		SELECT id FROM merchants WHERE display_name = 'Beta Digital Services'
 	`).Scan(&merchantID)
 	if err != nil {
-		t.Skipf("seeded fixture not present (run `npm run seed`): %v", err)
+		t.Skipf("seeded fixture not present (run `bun run seed`): %v", err)
 	}
 
 	schedules := loadSchedules(t, pool, merchantID)
 	if len(schedules) != 2 {
-		t.Skipf("seeded fixture has %d schedule rows, expected 2 (run `npm run seed`)", len(schedules))
+		t.Skipf("seeded fixture has %d schedule rows, expected 2 (run `bun run seed`)", len(schedules))
 	}
 
 	seedWindow := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)

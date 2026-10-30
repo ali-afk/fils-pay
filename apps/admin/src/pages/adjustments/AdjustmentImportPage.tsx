@@ -138,7 +138,7 @@ export function AdjustmentImportPage() {
       </RequireRole>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {notice ? <p>{notice}</p> : null}
+      {notice ? <p className="admin-notice">{notice}</p> : null}
 
       <h2>Past imports</h2>
       {listError ? <p className="admin-error">{listError}</p> : null}

@@ -12,6 +12,10 @@ export function bhd(amountFils: number): string {
   return `${formatBhd(toFils(amountFils))} BHD`;
 }
 
+export function bhdSigned(amountFils: number): string {
+  return `${formatBhd(toFils(amountFils, { allowNegative: true }))} BHD`;
+}
+
 /** `—` for a null/absent value, so an empty table cell is visibly empty
  *  rather than ambiguously blank. */
 export function dash(value: string | number | null | undefined): string {

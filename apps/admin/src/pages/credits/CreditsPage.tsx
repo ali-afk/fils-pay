@@ -67,12 +67,23 @@ export function CreditsPage() {
     }
   }
 
-  async function handleApprove(id: string): Promise<void> {
-    setBusyId(id);
+  async function handleApprove(item: CreditRequestDto): Promise<void> {
+    // A7: approving journals the ledger entry, so ask first and show the
+    // exact total that will post.
+    if (
+      !window.confirm(
+        `Approve this credit request for merchant ${item.merchantId.slice(0, 8)}? ` +
+          `${bhd(item.postedAmountFils)} will be journaled to the ledger, and the request ` +
+          "cannot be approved again afterwards.",
+      )
+    ) {
+      return;
+    }
+    setBusyId(item.id);
     setActionError(null);
     setNotice(null);
     try {
-      const record = await approveCreditRequest(id);
+      const record = await approveCreditRequest(item.id);
       setNotice(
         `Approved. ${bhd(record.postedAmountFils)} journaled to entry group ${
           record.ledgerEntryGroupId ?? "(unknown)"
@@ -112,12 +123,15 @@ export function CreditsPage() {
         <code>super_admin</code> operator — not the one who raised it — approves it.
       </p>
 
-      <nav className="admin-nav">
+      {/* A7: the active tab is a selected tab, not a disabled button — keep
+          it focusable and announce state via aria-selected. */}
+      <nav className="admin-nav" role="tablist" aria-label="Credit request status">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             type="button"
-            disabled={tab.value === status}
+            role="tab"
+            aria-selected={tab.value === status}
             onClick={() => setStatus(tab.value)}
           >
             {tab.label}
@@ -175,7 +189,7 @@ export function CreditsPage() {
                       <button
                         type="button"
                         disabled={busyId === item.id}
-                        onClick={() => void handleApprove(item.id)}
+                        onClick={() => void handleApprove(item)}
                       >
                         Approve
                       </button>{" "}

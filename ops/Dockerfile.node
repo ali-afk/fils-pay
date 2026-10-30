@@ -1,0 +1,13 @@
+# Runtime image for the TypeScript services (api, reporting, migrate, seed).
+# Build context is the repo root (see ops/docker-compose.yml: context: ..).
+# Requires .dockerignore at the repo root so host node_modules never enter
+# the build context. Recreated from the deploy lane (the original Dockerfiles
+# referenced by compose and README did not exist in the tree).
+FROM docker.io/oven/bun:1.4-alpine
+WORKDIR /app
+COPY . .
+# Non-frozen: the lockfile situation is in flux (package-lock.json deleted,
+# bun.lock untracked); a fresh clone may lack bun.lock. Dependencies are
+# versioned in package.json workspaces.
+RUN bun install
+CMD ["bun", "apps/api/src/index.ts"]

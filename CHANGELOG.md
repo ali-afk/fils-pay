@@ -10,6 +10,13 @@ The Handover audit round: every change since the handover tip `8b58b0f`
 (re-authored under the corrected identity). Registries: open findings in
 docs/bugs/ (one file per finding); fixed-work detail in docs/EXPLANATIONS.md.
 
+### Toolchain
+
+- **npm → bun**: `bun install` (bun.lock canonical; package-lock.json dropped).
+  migrate/seed run as `bun db/migrate.ts` / `bun db/seed/index.ts`, tests as
+  `bun test`, workspace tasks via `bun run --filter '*'`, compose commands exec
+  `bun`, script shebangs are `#!/usr/bin/env -S bun`. No npm needed.
+
 ### Added
 - **Refunds feature, end to end** (`5fe1d4a`, `f8846e8`): `POST /v1/refunds`
   wired to the locked `processRefund` (captured-based ceiling, single

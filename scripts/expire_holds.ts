@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env -S bun
 /**
  * Nightly janitor: a hold that's never captured or released just sits in
  * the table past its expires_at forever — nothing else in the platform
@@ -6,7 +6,7 @@
  * release one; nothing sweeps one). Run once a night from cron/the host's
  * own scheduler.
  *
- * Usage: DATABASE_URL=postgres://... npx tsx scripts/expire_holds.ts
+ * Usage: DATABASE_URL=postgres://... bun scripts/expire_holds.ts
  */
 import { pathToFileURL } from "node:url";
 import { Client } from "pg";

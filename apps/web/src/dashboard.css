@@ -250,6 +250,7 @@
 
 .dash-status-authorized,
 .dash-status-partially_captured,
+.dash-status-partially_refunded,
 .dash-status-pending,
 .dash-status-reserved,
 .dash-status-open {
@@ -307,4 +308,43 @@
   height: 0.7rem;
   min-width: 1px;
   background: #4a7ebb;
+}
+
+.dash-main {
+  min-width: 0;
+}
+
+.dash-table {
+  display: block;
+  overflow-x: auto;
+}
+
+.dash-nav a:focus-visible,
+.dash-button:focus-visible,
+.dash-form input:focus-visible,
+.dash-form select:focus-visible,
+.dash-form textarea:focus-visible {
+  outline: 2px solid #1a6db5;
+  outline-offset: 1px;
+}
+
+@media (max-width: 560px) {
+  .dash-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dash-dl {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dash-identity {
+    order: -1;
+    align-self: flex-end;
+  }
 }

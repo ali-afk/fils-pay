@@ -5,7 +5,7 @@
  * transaction.captured capture + createFetchTransport() dispatch, with the
  * receiver itself calling verifySignature against what was actually sent.
  * Requires DATABASE_URL to point at a real, migrated Postgres (run
- * `npm run migrate` first).
+ * `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -26,7 +26,7 @@ import { verifySignature } from "../webhooks/sign.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "webhooks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "webhooks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

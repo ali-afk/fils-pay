@@ -1,6 +1,6 @@
 /**
  * Unit tests for the transactions CSV export body builder, against a real,
- * migrated Postgres (run `npm run migrate` first).
+ * migrated Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";

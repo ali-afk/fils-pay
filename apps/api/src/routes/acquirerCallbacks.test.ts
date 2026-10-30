@@ -1,6 +1,6 @@
 /**
  * Route tests for the public acquirer async-callback endpoint. Requires
- * DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate`
+ * DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate`
  * first).
  */
 import assert from "node:assert/strict";
@@ -13,7 +13,7 @@ import { loadConfig } from "../config.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "acquirerCallbacks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "acquirerCallbacks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

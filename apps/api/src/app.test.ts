@@ -2,7 +2,7 @@
  * Route-level tests, using Fastify's `app.inject(...)` against `buildApp()`
  * — no real socket. These exercise the main auth/onboarding flows against a
  * real, migrated Postgres (no mocking of the DB layer), so this file
- * requires `DATABASE_URL` to point at one (run `npm run migrate` first).
+ * requires `DATABASE_URL` to point at one (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -21,7 +21,7 @@ process.env.LOG_LEVEL = "debug";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "app.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "app.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

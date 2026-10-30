@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env -S bun
 /**
  * Tiny migration runner: applies db/migrations/*.sql in lexical order,
  * tracked in a bootstrap `schema_migrations` table. The bootstrap table is
@@ -9,7 +9,7 @@
  * Idempotent: re-running against a database that already has some or all
  * migrations applied only applies the ones missing from schema_migrations.
  *
- * Usage: DATABASE_URL=postgres://... npx tsx db/migrate.ts
+ * Usage: DATABASE_URL=postgres://... bun db/migrate.ts
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";

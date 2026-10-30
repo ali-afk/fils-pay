@@ -6,7 +6,7 @@
  * runRebuild is referenced only from this file and from
  * src/index.ts's `rebuild` subcommand dispatch, never from worker/
  * catch-up/the listener/any daemon startup path. Requires DATABASE_URL to
- * point at a real, migrated Postgres (run `npm run migrate` first).
+ * point at a real, migrated Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -19,7 +19,7 @@ import { runRebuild } from "./rebuild.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("rebuild.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)");
+  throw new Error("rebuild.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)");
 }
 
 const pool = new Pool({ connectionString: databaseUrl, max: 5 });

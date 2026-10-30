@@ -10,7 +10,7 @@ changes. Last updated September 2026 — MK.
 After **every** file change, run the full test suite to catch regressions:
 
 ```bash
-npm test                                    # TS: all packages + apps
+bun test                                    # TS: all packages + apps
 cd apps/settlement && go test ./...         # Go: settlement service
 ```
 

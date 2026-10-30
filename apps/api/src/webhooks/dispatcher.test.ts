@@ -4,7 +4,7 @@
  * body, valid signature), backoff/exhaustion sequence across repeated
  * runDispatchPass calls, next_attempt_at progression, zero-endpoints
  * behavior, and multi-endpoint independence. Requires DATABASE_URL to
- * point at a real, migrated Postgres (run `npm run migrate` first).
+ * point at a real, migrated Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -20,7 +20,7 @@ import type { WebhookTransport, WebhookTransportRequest } from "./transport.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("dispatcher.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)");
+  throw new Error("dispatcher.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)");
 }
 
 const config = loadConfig({
@@ -132,7 +132,7 @@ test("zero registered endpoints: an outbox event creates no delivery rows", asyn
 test("one active endpoint, 2xx response: exact headers/body sent, delivery marked succeeded, signature verifies with the raw secret", async () => {
   const merchantId = await createMerchant("happy-path");
   // A unique URL per test run, not shared with any other test — this file's
-  // tests share one real Postgres with every other test file when `npm
+  // tests share one real Postgres with every other test file when `bun
   // test` runs the whole suite, and runDispatchPass's Step B is
   // deliberately global (attempts every currently-due delivery platform-
   // wide, by design, not scoped to one merchant) — so a transport capture

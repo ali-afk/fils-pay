@@ -8,10 +8,10 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p db --noEmit && tsc -p scripts --noEmit",
-    "test": "npm run test --workspaces --if-present && tsx --test scripts/*.test.ts",
-    "migrate": "tsx db/migrate.ts",
-    "seed": "tsx db/seed/index.ts"
+    "typecheck": "bun run --filter '*' typecheck && tsc -p db --noEmit && tsc -p scripts --noEmit",
+    "test": "bun run --filter '*' test && bun test scripts/",
+    "migrate": "bun db/migrate.ts",
+    "seed": "bun db/seed/index.ts"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",

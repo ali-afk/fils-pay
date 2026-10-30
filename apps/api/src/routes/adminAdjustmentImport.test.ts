@@ -1,6 +1,6 @@
 /**
  * Route-level tests for the admin "Import adjustments" tool, via
- * `app.inject(...)` against a real, migrated Postgres (run `npm run migrate`
+ * `app.inject(...)` against a real, migrated Postgres (run `bun run migrate`
  * first).
  */
 import assert from "node:assert/strict";

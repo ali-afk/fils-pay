@@ -4,7 +4,7 @@
  * hand-constructed outbox event row, and prove applyBatchClosed's
  * ON CONFLICT DO UPDATE is safe to re-invoke without drift. Requires
  * DATABASE_URL to point at a real, migrated Postgres (run
- * `npm run migrate` first).
+ * `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -15,7 +15,7 @@ import { applyEvent, type OutboxEventRow } from "./applyEvent.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("applyEvent.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)");
+  throw new Error("applyEvent.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)");
 }
 
 const pool = new Pool({ connectionString: databaseUrl, max: 5 });

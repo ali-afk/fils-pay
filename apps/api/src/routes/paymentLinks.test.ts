@@ -2,7 +2,7 @@
  * Route-level tests for the payment-links surface — create, public read,
  * pay, cancel, list — using `app.inject(...)` against `buildApp()` and a
  * real, migrated Postgres (no DB mocking). Requires `DATABASE_URL` (run
- * `npm run migrate` first).
+ * `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -19,7 +19,7 @@ import { toFils } from "@filspay/money";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "paymentLinks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "paymentLinks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

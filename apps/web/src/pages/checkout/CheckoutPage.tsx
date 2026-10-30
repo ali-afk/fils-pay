@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { formatBhd, toFils } from "@filspay/money";
 import { getPaymentLink, payPaymentLink } from "../../api/paymentLinks.js";
 import { ApiError } from "../../api/client.js";
+import { dateTime } from "../../format.js";
 import type { PaymentLinkPublicDto, PayPaymentLinkResponse, SimulatedCardInput } from "../../types.js";
 import "./CheckoutPage.css";
 
@@ -19,6 +20,13 @@ type PayState =
   | { kind: "terminal"; message: string };
 
 const EMPTY_CARD: SimulatedCardInput = { pan: "", expiryMonth: 1, expiryYear: new Date().getFullYear() + 1, cvv: "" };
+
+/** A card is valid through the end of its expiry month, so a month/year pair
+ *  that has already passed is expired. Native min/max only guard the year
+ *  against past years; month + current year slips through without this. */
+function cardIsExpired(month: number, year: number, now = new Date()): boolean {
+  return year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
+}
 
 export function CheckoutPage() {
   const { token } = useParams<{ token: string }>();
@@ -52,6 +60,10 @@ export function CheckoutPage() {
   async function handleSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     if (!token) return;
+
+    // Reject an expired card before anything is sent — the field-level
+    // message below the expiry fields stays visible until the pair is valid.
+    if (cardIsExpired(card.expiryMonth, card.expiryYear)) return;
 
     // A fresh Idempotency-Key per explicit user action — every click,
     // including a "try again" after a decline, is a new attempt.
@@ -115,7 +127,7 @@ export function CheckoutPage() {
           <dt>Transaction ID</dt>
           <dd>{payState.result.transactionId}</dd>
           <dt>Paid at</dt>
-          <dd>{payState.result.paidAt}</dd>
+          <dd>{dateTime(payState.result.paidAt)}</dd>
         </dl>
       </main>
     );
@@ -234,6 +246,11 @@ export function CheckoutPage() {
             />
           </label>
         </div>
+        {cardIsExpired(card.expiryMonth, card.expiryYear) ? (
+          <span className="checkout-field-error" role="alert">
+            This card has expired.
+          </span>
+        ) : null}
         <button type="submit" disabled={submitting}>
           {submitting ? "Processing..." : `Pay ${amount} BHD`}
         </button>

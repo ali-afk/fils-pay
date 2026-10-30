@@ -14,7 +14,7 @@ docker compose -f ops/docker-compose.yml up api settlement reporting
 ```
 
 apps/web and apps/admin aren't part of this compose file — they're plain
-Vite dev servers that talk to apps/api over HTTP (`npm run dev` inside
+Vite dev servers that talk to apps/api over HTTP (`bun run dev` inside
 each package), not services with their own database connection.
 
 ## Files

@@ -1,6 +1,6 @@
 /**
  * Unit tests for the ad-hoc transactions report query, against a real,
- * migrated Postgres (run `npm run migrate` first).
+ * migrated Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";

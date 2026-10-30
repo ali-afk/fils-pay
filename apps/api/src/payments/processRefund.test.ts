@@ -1,6 +1,6 @@
 /**
  * Tests for the refund processor against a real, migrated Postgres (no DB
- * mocking). Requires `DATABASE_URL` (run `npm run migrate` first).
+ * mocking). Requires `DATABASE_URL` (run `bun run migrate` first).
  *
  * There is no route to `inject` against yet — `POST /v1/refunds` is still a
  * 501 stub — so these call `processRefund()` directly. The transactions they
@@ -22,7 +22,7 @@ import { processRefund } from "./processRefund.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "processRefund.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "processRefund.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

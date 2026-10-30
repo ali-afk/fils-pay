@@ -30,6 +30,7 @@ services:
       interval: 2s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
 
   # One-off: applies db/migrations/*.sql, then exits. Re-run any time; the
   # runner tracks what's already applied (db/migrate.ts's own bootstrap
@@ -40,7 +41,7 @@ services:
     build:
       context: ..
       dockerfile: ops/Dockerfile.node
-    command: ["npm", "run", "migrate"]
+    command: ["bun", "run", "migrate"]
     environment:
       # Postgres and every app service here share the same Docker Compose
       # bridge network and never talk to the database over a link that
@@ -59,9 +60,11 @@ services:
     build:
       context: ..
       dockerfile: ops/Dockerfile.node
-    command: ["npm", "run", "seed"]
+    command: ["bun", "run", "seed"]
     environment:
       DATABASE_URL: postgres://filspay:filspay_dev_password@postgres:5432/filspay?sslmode=disable
+    env_file:
+      - ./.env.docker
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,9 +75,16 @@ services:
       dockerfile: ops/Dockerfile.node
     # WEBHOOK_SECRET_ENCRYPTION_KEY isn't needed in dev; the api uses a built-in
     # dev key unless NODE_ENV=production. (copilot, pasted by FH — unverified)
-    command: ["npx", "tsx", "apps/api/src/index.ts"]
+    command: ["bun", "apps/api/src/index.ts"]
     ports:
-      - "3000:3000"
+      # Loopback-only publish: Caddy on the host is the public entry; a directly
+      # reachable API plus trustProxy would accept spoofed X-Forwarded-For
+      # (hosting-proxy-required-2026-10-30.md §4.4). The two-machine LAN demo
+      # runs before the judged deploy, or direct access is firewalled off.
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - ./.env.docker
+    restart: unless-stopped
     environment:
       # One application role (filspay) owns the whole database in this
       # environment. Every service here, and the one-off migrate/seed jobs
@@ -103,21 +113,27 @@ services:
       # AM: PGCONN_SETTLEMENT is ignored while DATABASE_URL is set; kept for the
       # settlement-v2 sharding work. safe to leave.
       PGCONN_SETTLEMENT: postgres://filspay:filspay_dev_password@postgres:5432/filspay?sslmode=disable
+    env_file:
+      - ./.env.docker
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
 
   reporting:
     build:
       context: ..
       dockerfile: ops/Dockerfile.node
     # No subcommand = `worker`. (MK)
-    command: ["npx", "tsx", "apps/reporting/src/index.ts"]
+    command: ["bun", "apps/reporting/src/index.ts"]
     environment:
       DATABASE_URL: postgres://filspay:filspay_dev_password@postgres:5432/filspay?sslmode=disable
+    env_file:
+      - ./.env.docker
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   filspay_pgdata:

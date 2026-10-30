@@ -15,7 +15,7 @@ import (
 )
 
 // mustPool connects to DATABASE_URL (matching how the TS tests connect —
-// same env var, same "run `npm run migrate` first" contract) or skips the
+// same env var, same "run `bun run migrate` first" contract) or skips the
 // test if it isn't set, so `go test ./...` still runs cleanly without a
 // live Postgres.
 // am: these all skip when DATABASE_URL isn't set, so 'ok' means nothing. (fixed? CI has pg now, FP-270)

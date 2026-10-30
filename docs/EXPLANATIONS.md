@@ -460,6 +460,80 @@ nets to zero by 0007's deferred constraint — verified on a live refund.
 - **Demo tooling** (`c8d6d97`): `scripts/demo/admin-login.hurl` (hurl) — one
   command for the admin login → OTP → authed-call flow.
 
+## 2026-10-30 session addendum — verified bug catalog (this tree)
+
+Findings verified this session against the working tree; full tables with
+commands and statuses in `docs/bug-explanations-2026-10-30.md`. Ids use the
+plan/audit ids (R16, C5, C6, W1, G6, A1, A3) so they don't collide with the
+case-file ids above.
+
+### R16/G4 — `GET /v1/reporting/export-summary` was unauthenticated and always 500
+- Wrong: `apps/api/src/routes/reporting.ts:79` registered the route with no
+  `preHandler` while every sibling reporting route carries
+  `requireMerchantAuth`; the handler derefs `request.merchantAuth!.merchantId`.
+- Why: one route missed the auth registration the file's own header claims for
+  the whole surface.
+- Breaks: an anonymous call 500s (and the endpoint is exposed without auth).
+- Fix: `{ preHandler: requireMerchantAuth }` added; new `reportingAuth.test.ts`
+  pins 401 unauth / 200 authed.
+
+### C5 — fresh database migrate dies at `0054_views.sql` (42P01)
+- Wrong: `v_unbatched_capture_events` filters `NOT EXISTS (SELECT 1 FROM
+  settlement_batch_events …)` but that table exists in **no** migration and
+  nothing writes it; PG resolves view relations at creation.
+- Why: the view referenced a phantom table; the real eligibility mechanism
+  (`db/migrations/0023`) is `settlement_batch_id IS NULL`.
+- Breaks: a fresh DB (`bun db/migrate.ts`) aborts at 0054 — CI, new dev DBs
+  and a fresh demo DB all fail to migrate.
+- Fix: flattened to `AND te.settlement_batch_id IS NULL`; verified with a
+  throwaway fresh DB (66/66 files applied cleanly).
+
+### C6 — migration `0055` could never apply
+- Wrong: `INSERT INTO chart_of_accounts (code,name,account_type,description)`
+  with kind `'suspense'` and `ON CONFLICT (code)` into a table that is
+  `(id, name, kind CHECK (asset|liability|revenue))`.
+- Why: 0007's chart admits no such columns or kind; no unique index on `code`.
+- Breaks: a fresh migrate that got past 0054 would die here.
+- Fix: re-shaped to `(id, name, kind)` with `'asset'` (0007:19's own suspense
+  precedent) and `ON CONFLICT (id)`.
+
+### W1 — merchant dashboard crashes the whole page on negative amounts
+- Wrong: `bhd()` calls `toFils(x)` without `allowNegative`; `toFils` throws a
+  `RangeError` below zero. Refund events carry negative `amountFils` and the
+  reconciliation gap is a legitimately signed figure.
+- Why: the planted `format.ts` comment claims "amounts are never negative in
+  the dashboard. ignore".
+- Breaks: one refund event or a negative gap → blank route.
+- Fix: `bhdSigned()` (`allowNegative: true`) used on the event timeline and
+  the two gap displays.
+
+### G6 — `refundedFils` missing from the transaction DTO
+- Wrong: `serializeTransaction` returns no `refundedFils` (stale `TODO(am)`),
+  while `refunded_fils` is selected (migration 0043) and the web type's
+  comment claims "refundedFils is there, a few lines down" — it is not.
+- Fix: field added to the row type, DTO, serializer, and web `TransactionDto`.
+
+### A1 — admin bulk approve force-approves rejected merchants
+- Wrong: `bulkKyc.ts` UPDATE has no status predicate; JSDoc claims
+  "already-approved or rejected ids are skipped" (and `docs/ADMIN.md` says
+  "only `under_review` are affected") — both false vs the SQL.
+- Fix: `AND onboarding_status = 'under_review'`; new
+  `bulkApproveGuard.test.ts` proves a rejected id is untouched.
+
+### A3 — admin "Run batch" default date off by one at Bahrain 00:30
+- Wrong: `yesterdayIso()` used `toISOString()` (UTC) for a UTC+3 business day.
+- Fix: local-component date formatting (MerchantDetailPage pattern).
+
+### Baseline debt (pre-existing, not caused by this session)
+`bun test` (with `DATABASE_URL`): **418 pass / 16 fail** — the 16 are
+pre-existing (7+ refund tests on `chk_refunds_reason_not_null`, dispatcher
+backoff on `secretCrypto: stored ciphertext is too short`, runConsumerPass
+atomicity/e2e/batch_closed, runRebuild). `go test ./...` green. The live DB
+holds migrations 0073–0077 (money columns BIGINT there) that the on-disk tree
+(66 files, max 0072) does not — new migrations must be ≥ 0078.
+
+---
+
 ## Commit register
 
 The full commit set with final hashes lives in `CHANGELOG.md` (`[Unreleased]`

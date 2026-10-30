@@ -2,7 +2,7 @@
  * Unit tests for the merchant-facing "send test event" tool, using a fake
  * WebhookTransport (same layer-1 shape as dispatcher.test.ts) — no real
  * socket. Requires DATABASE_URL to point at a real, migrated Postgres (run
- * `npm run migrate` first).
+ * `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -19,7 +19,7 @@ import type { WebhookTransport, WebhookTransportRequest } from "./transport.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "testSend.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "testSend.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

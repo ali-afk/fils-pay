@@ -1,6 +1,6 @@
 /**
  * Tests for the merchant-scoped refund entry point against a real, migrated
- * Postgres. Requires `DATABASE_URL` (run `npm run migrate` first).
+ * Postgres. Requires `DATABASE_URL` (run `bun run migrate` first).
  *
  * The route is not registered yet (`POST /v1/refunds` is still a 501 stub),
  * so these call the module directly — including `assertRefundRequestScope`,
@@ -23,7 +23,7 @@ import { assertRefundRequestScope, initiateMerchantRefund } from "./initiateMerc
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "initiateMerchantRefund.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "initiateMerchantRefund.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env -S bun
 /**
  * One-off March 2026 reconciliation sweep. Finance wants the scheme
  * rounding residue (the gap between what gets journaled at capture and
@@ -6,7 +6,7 @@
  * off for March before the books close on it. Run manually, once — see
  * scripts/out/reconcile-2026-03.log for the last real run's output.
  *
- * Usage: DATABASE_URL=postgres://... npx tsx scripts/reconcile_march.ts
+ * Usage: DATABASE_URL=postgres://... bun scripts/reconcile_march.ts
  */
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";

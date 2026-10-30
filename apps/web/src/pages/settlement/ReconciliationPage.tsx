@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getReconciliation } from "../../api/settlement.js";
 import { ApiError, describeError } from "../../api/client.js";
-import { bhd } from "../../format.js";
+import { bhd, bhdSigned } from "../../format.js";
 import type { ReconciliationReport } from "../../types.js";
 
 /**
@@ -112,7 +112,7 @@ export function ReconciliationPage() {
             {report.explained ? (
               <span className="dash-badge dash-badge-ok">Reconciled — no gap</span>
             ) : (
-              <span className="dash-badge dash-badge-gap">Gap: {bhd(report.gapFils)}</span>
+              <span className="dash-badge dash-badge-gap">Gap: {bhdSigned(report.gapFils)}</span>
             )}
           </p>
 
@@ -128,7 +128,7 @@ export function ReconciliationPage() {
             <dt>Pending, not yet batched</dt>
             <dd>{bhd(report.pendingUnbatchedFils)}</dd>
             <dt>Gap</dt>
-            <dd>{bhd(report.gapFils)}</dd>
+            <dd>{bhdSigned(report.gapFils)}</dd>
           </dl>
 
           <p className="dash-muted">

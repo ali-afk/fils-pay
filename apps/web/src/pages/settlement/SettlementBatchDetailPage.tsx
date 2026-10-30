@@ -149,7 +149,7 @@ export function SettlementBatchDetailPage() {
                 </Link>
               </td>
               <td>{dash(line.reference)}</td>
-              <td>{line.status}</td>
+              <td><span className={`dash-status dash-status-${line.status}`}>{line.status}</span></td>
               <td>{bhd(line.authorizedFils)}</td>
               <td>{bhd(line.capturedFils)}</td>
               <td>{bhd(line.schemeAmountFils)}</td>

@@ -1,0 +1,38 @@
+# FilsPay reverse proxy for the judged deployment (bare IP, plain HTTP).
+# Per docs/plans/hosting-proxy-required-2026-10-30.md §4.3.
+# Serves the built dashboards from /srv/filspay and proxies the API to the
+# loopback-published Fastify instance. Admin must be built with
+# `vite build --base=/admin/`; the web dashboard with VITE_API_BASE_URL=.
+{
+    # No auto_https: this is a plain-IP host with no domain.
+    auto_https off
+}
+
+:80 {
+    encode gzip
+
+    # API surface. Keep these before the static catch-all.
+    handle /v1/* {
+        reverse_proxy 127.0.0.1:3000
+    }
+    handle /healthz {
+        reverse_proxy 127.0.0.1:3000
+    }
+    handle /readyz {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    # Admin console, built with base /admin/.
+    handle_path /admin/* {
+        root * /srv/filspay/admin
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Merchant dashboard at the root.
+    handle {
+        root * /srv/filspay/web
+        try_files {path} /index.html
+        file_server
+    }
+}

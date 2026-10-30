@@ -9,7 +9,7 @@
 -- Operational note (not a schema concern): password_hash has no sensible
 -- default, so this ADD COLUMN ... NOT NULL fails against a database that
 -- already has rows in merchant_users (an old local dev DB). The normal flow
--- is always `npm run migrate && npm run seed`, and the seed recreates
+-- is always `bun run migrate && bun run seed`, and the seed recreates
 -- merchant_users from empty, so this only bites a stale local DB — drop and
 -- recreate it (or truncate merchant_users) before migrating.
 

@@ -1,7 +1,7 @@
 /**
  * Route-level tests for the admin plane, via `app.inject(...)`
  * against a real, migrated Postgres — no mocking of the DB layer. Requires
- * DATABASE_URL to point at one (run `npm run migrate` first).
+ * DATABASE_URL to point at one (run `bun run migrate` first).
  *
  * The only test double anywhere in here is for the two calls that cross the
  * process boundary into apps/settlement. Those are injected through
@@ -29,7 +29,7 @@ import type {
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "admin.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "admin.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

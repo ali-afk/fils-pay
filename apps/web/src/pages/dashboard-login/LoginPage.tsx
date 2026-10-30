@@ -136,14 +136,14 @@ export function LoginPage() {
               required
               autoComplete="off"
               spellCheck={false}
-              placeholder="00000000-0000-0000-0000-000000000000"
+              placeholder="paste your merchant id here"
               value={merchantId}
               onChange={(e) => setMerchantId(e.target.value)}
             />
           </label>
           <p className="dash-muted dash-hint">
-            The UUID issued when your account was created. Your API integration
-            already uses this value.
+            Paste the UUID issued when your account was created — the same
+            value your API integration already uses.
           </p>
           <label>
             Email

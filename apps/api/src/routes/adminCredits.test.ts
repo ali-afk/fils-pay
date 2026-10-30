@@ -1,7 +1,7 @@
 /**
  * Route-level tests for the manual-credits plane, via `app.inject(...)`
  * against a real, migrated Postgres — no mocking of the DB layer. Requires
- * DATABASE_URL to point at one (run `npm run migrate` first).
+ * DATABASE_URL to point at one (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -14,7 +14,7 @@ import { hashPassword } from "../adminAuth/passwords.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "adminCredits.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "adminCredits.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

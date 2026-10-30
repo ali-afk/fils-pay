@@ -2,7 +2,7 @@
  * DB-backed tests for the credit service itself: what it journals, what it
  * does to the cached balance, which instant the legs are anchored to, and
  * what happens when two approvers race. Requires DATABASE_URL to point at a
- * real, migrated Postgres (run `npm run migrate` first).
+ * real, migrated Postgres (run `bun run migrate` first).
  *
  * These go through the exported service rather than the routes on purpose —
  * the ledger invariants below are properties of the posting itself, not of
@@ -23,7 +23,7 @@ import { AppError } from "../lib/errors.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "credits.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "credits.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

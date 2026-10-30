@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { listMerchants } from "../../api/merchants.js";
 import { bulkApproveKyc } from "../../api/merchantsBulk.js";
@@ -99,29 +99,39 @@ export function MerchantListPage() {
   }
 
   const allLoadedSelected = merchants.length > 0 && selectedIds.size === merchants.length;
+  const someSelected = merchants.length > 0 && selectedIds.size > 0 && !allLoadedSelected;
+
+  // A8: the header checkbox shows indeterminate while only some loaded rows
+  // are selected. React has no prop for it, so set the DOM property
+  // directly after each render that can change it.
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
 
   return (
     <section>
       <h1>Merchants</h1>
 
-      <form
-        className="admin-form admin-form-inline"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setAppliedQuery(query.trim());
-        }}
-      >
+      {/* A8: search commits on change, matching the status checkboxes' model
+          — one commit model, no separate submit event. */}
+      <div className="admin-form admin-form-inline">
         <label>
           Search
           <input
             type="search"
             placeholder="Display name, merchant id, or contact email"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setQuery(next);
+              setAppliedQuery(next.trim());
+            }}
           />
         </label>
-        <button type="submit">Search</button>
-      </form>
+      </div>
 
       <fieldset className="admin-filters">
         <legend>Onboarding status</legend>
@@ -143,7 +153,10 @@ export function MerchantListPage() {
       {selectedIds.size > 0 ? (
         <div className="admin-form admin-form-inline">
           <span>{selectedIds.size} selected</span>
-          <RequireRole allow={["finance", "super_admin"]}>
+          <RequireRole
+            allow={["finance", "super_admin"]}
+            fallback={<span className="admin-muted">finance role required</span>}
+          >
             <button type="button" disabled={bulkBusy} onClick={() => void approveSelected()}>
               Bulk approve KYC
             </button>
@@ -159,6 +172,7 @@ export function MerchantListPage() {
           <tr>
             <th>
               <input
+                ref={headerCheckboxRef}
                 type="checkbox"
                 aria-label="Select all loaded merchants"
                 checked={allLoadedSelected}

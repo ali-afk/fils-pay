@@ -2,7 +2,7 @@
  * DB-backed tests for session lookup — the function every authenticated
  * route ultimately depends on to decide whether a request is logged in.
  * Requires DATABASE_URL to point at a real, migrated Postgres (run
- * `npm run migrate` first).
+ * `bun run migrate` first).
  *
  * These drive the exported functions directly rather than going through the
  * HTTP layer: what counts as a live session is a property of the query
@@ -18,7 +18,7 @@ import { randomToken, sha256Hex } from "../lib/crypto.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "sessions.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "sessions.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

@@ -22,6 +22,11 @@
   margin: 1rem 0;
 }
 
+.checkout-field-error {
+  color: #b00020;
+  font-size: 0.75rem;
+}
+
 .checkout-form {
   display: flex;
   flex-direction: column;

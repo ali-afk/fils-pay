@@ -5,7 +5,7 @@
  * end-to-end pass over real events enqueued via @filspay/events'
  * enqueueEvent with the exact payload shapes capture.ts/void.ts and
  * CloseBatch produce. Requires DATABASE_URL to point at a real, migrated
- * Postgres (run `npm run migrate` first).
+ * Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -16,7 +16,7 @@ import { runConsumerPass, CONSUMER_NAME } from "./runConsumerPass.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("runConsumerPass.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)");
+  throw new Error("runConsumerPass.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)");
 }
 
 const pool = new Pool({ connectionString: databaseUrl, max: 5 });

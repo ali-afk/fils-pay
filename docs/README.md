@@ -56,7 +56,7 @@ tests that assert the wrong behavior. The full trail is in
 | `apps/reporting` (TS) | outbox consumer → analytics rollups (+ refund & paid states) |
 | `apps/web`, `apps/admin` (React/Vite) | checkout + merchant dashboard / ops console — they only talk to the API over HTTP |
 | `packages/money`, `packages/events` | the integer-fils toolbox; outbox event types |
-| `db/migrations` `0001–0077` | Postgres schema; `npm run migrate` applies idempotently |
+| `db/migrations` `0001–0077` | Postgres schema; `bun run migrate` applies idempotently |
 | `ops/` | docker-compose stack + env + Dockerfiles; `POSTGRES_URL` overrides the DB host for remote setups |
 
 The database is the bus: services share one Postgres and wake each other via
@@ -105,16 +105,17 @@ The database is the bus: services share one Postgres and wake each other via
 ## Run & demo
 
 ```bash
+# Toolchain: bun — no npm needed.
 # Local: deps → migrate → seed → services
-npm ci
+bun install
 export DATABASE_URL='postgres://filspay:filspay_dev_password@localhost:5432/filspay?sslmode=disable'
 export WEBHOOK_SECRET_ENCRYPTION_KEY='<base64 32 bytes — sandbox value in ops/.env.docker>'
-npm run migrate && npm run seed
-npm -w apps/api run dev                        # :3000
+bun run migrate && bun run seed
+bun run --filter @filspay/api dev              # :3000
 (cd apps/settlement && go build ./... && ./settlement daemon)
-npm -w apps/reporting run dev
-(cd apps/web && npm run dev)                   # :5173
-(cd apps/admin && npm run dev)                 # :5174
+bun run --filter @filspay/reporting dev
+(cd apps/web && bun run dev)                   # :5173
+(cd apps/admin && bun run dev)                 # :5174
 
 # Composed stack (the shipped path)
 docker compose -f ops/docker-compose.yml up -d postgres
@@ -146,7 +147,7 @@ admin login → OTP → authed call against a dev-posture api
 `FilsPaySeed!2026` (merchants) / `FilsPayAdminSeed!2026` (admins:
 `support@filspay.test`, `finance@filspay.test`, `superadmin@filspay.test`).
 
-**Tests:** `npm test` (458/458 across events/money/api/reporting/web/scripts)
+**Tests:** `bun test` (baseline 458/458; full re-run under bun pending);
 and `cd apps/settlement && go test ./...`; typecheck clean for api/web/admin.
 
 ## Doc map
@@ -154,6 +155,7 @@ and `cd apps/settlement && go test ./...`; typecheck clean for api/web/admin.
 | Doc | Purpose |
 |---|---|
 | [README.md](README.md) | this guide — start here |
+| [WALKTHROUGH.md](WALKTHROUGH.md) | step-by-step tour of the whole codebase with context — read this to own the code |
 | [bugs/README.md](bugs/README.md) | **open** bug ledger (one file per finding) |
 | [EXPLANATIONS.md](EXPLANATIONS.md) | per-bug write-up of the **fixed** work |
 | [CHANGELOG.md](../CHANGELOG.md) | the change register (what shipped, by commit) |

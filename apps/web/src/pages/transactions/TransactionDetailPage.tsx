@@ -8,7 +8,7 @@ import {
 } from "../../api/transactions.js";
 import { ApiError, describeError } from "../../api/client.js";
 import { RequireRole } from "../../auth/RequireRole.js";
-import { bhd, dash, dateTime } from "../../format.js";
+import { bhd, bhdSigned, dash, dateTime } from "../../format.js";
 import type { TransactionDto, TransactionEventDto } from "../../types.js";
 
 type LoadState =
@@ -239,7 +239,7 @@ export function TransactionDetailPage() {
             <tr key={event.id}>
               <td>{dateTime(event.occurredAt)}</td>
               <td>{event.eventType}</td>
-              <td>{event.amountFils === null ? "—" : bhd(event.amountFils)}</td>
+              <td>{event.amountFils === null ? "—" : bhdSigned(event.amountFils)}</td>
               <td>
                 {event.actorType}
                 {event.actorId ? (

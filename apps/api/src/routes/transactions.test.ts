@@ -2,7 +2,7 @@
  * Route-level tests for the transactions surface — authorize, capture,
  * void, and reads — using `app.inject(...)` against `buildApp()` and a
  * real, migrated Postgres (no DB mocking). Requires `DATABASE_URL` (run
- * `npm run migrate` first).
+ * `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -16,7 +16,7 @@ import { recordKycReview } from "../onboarding/review.js";
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "transactions.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "transactions.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

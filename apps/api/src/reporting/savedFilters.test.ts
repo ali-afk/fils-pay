@@ -1,6 +1,6 @@
 /**
  * Unit tests for the saved-filter write path, against a real, migrated
- * Postgres (run `npm run migrate` first).
+ * Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";

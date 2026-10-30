@@ -1,6 +1,6 @@
 /**
  * Route-level tests for the admin "Adjust balance" tool, via
- * `app.inject(...)` against a real, migrated Postgres (run `npm run migrate`
+ * `app.inject(...)` against a real, migrated Postgres (run `bun run migrate`
  * first). No test doubles — this route crosses no process boundary.
  */
 import assert from "node:assert/strict";

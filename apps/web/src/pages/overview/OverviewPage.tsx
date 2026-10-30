@@ -58,9 +58,24 @@ export function OverviewPage() {
     void load();
   }, [load]);
 
+  // Polling pauses in hidden tabs: an interval ticking in the background is
+  // wasted work and keeps firing fetches the user cannot see. When the tab
+  // becomes visible again the interval simply restarts.
   useEffect(() => {
-    const timer = window.setInterval(() => void load(), POLL_MS);
-    return () => window.clearInterval(timer);
+    let timer: number | undefined;
+    const stop = () => window.clearInterval(timer);
+    const sync = () => {
+      stop();
+      if (!document.hidden) {
+        timer = window.setInterval(() => void load(), POLL_MS);
+      }
+    };
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      document.removeEventListener("visibilitychange", sync);
+      stop();
+    };
   }, [load]);
 
   const peakGross = Math.max(1, ...(volumes?.points.map((point) => point.capturedGrossFils) ?? [1]));
@@ -116,6 +131,11 @@ export function OverviewPage() {
           </tr>
         </thead>
         <tbody>
+          {loading && !volumes ? (
+            <tr>
+              <td colSpan={5}>Loading...</td>
+            </tr>
+          ) : null}
           {volumes?.points.map((point) => (
             <tr key={point.date}>
               <td>{point.date}</td>
@@ -156,6 +176,11 @@ export function OverviewPage() {
           </tr>
         </thead>
         <tbody>
+          {loading && !payouts ? (
+            <tr>
+              <td colSpan={6}>Loading...</td>
+            </tr>
+          ) : null}
           {payouts?.points.map((point) => (
             <tr key={point.settlementBatchId}>
               <td>
@@ -193,6 +218,11 @@ export function OverviewPage() {
           </tr>
         </thead>
         <tbody>
+          {loading && !topLinks ? (
+            <tr>
+              <td colSpan={5}>Loading...</td>
+            </tr>
+          ) : null}
           {topLinks?.links.map((link, index) => (
             <tr key={link.id}>
               <td>{index + 1}</td>

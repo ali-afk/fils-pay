@@ -1,10 +1,10 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env -S bun
 /**
  * CLI entry point: generate() the deterministic seed, then run every
  * self-verify assertion against it. Exits non-zero iff any REAL assertion
  * fails.
  *
- * Usage: DATABASE_URL=postgres://... npx tsx db/seed/index.ts
+ * Usage: DATABASE_URL=postgres://... bun db/seed/index.ts
  */
 import { Pool } from "pg";
 import { generate } from "./generate.js";

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test \"src/**/*.test.ts\""
+    "test": "bun test src/"
   },
   "dependencies": {
     "@filspay/money": "*",

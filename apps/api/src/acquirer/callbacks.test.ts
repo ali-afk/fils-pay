@@ -1,7 +1,7 @@
 /**
  * Tests for the acquirer async-callback processor. The insert path needs a
  * real transaction to reference, so this file requires DATABASE_URL to
- * point at a real, migrated Postgres (run `npm run migrate` first).
+ * point at a real, migrated Postgres (run `bun run migrate` first).
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -13,7 +13,7 @@ import { applyAcquirerCallback, withCallbackRetry, type AcquirerCallbackInput } 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error(
-    "callbacks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `npm run migrate` first)",
+    "callbacks.test.ts requires DATABASE_URL to point at a real, migrated Postgres (run `bun run migrate` first)",
   );
 }
 

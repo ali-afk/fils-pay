@@ -15,18 +15,23 @@ if (!databaseUrl) {
   throw new Error("cors.test.ts requires DATABASE_URL (run `npm run migrate` first)");
 }
 
-const config = loadConfig({
-  DATABASE_URL: databaseUrl,
-  NODE_ENV: "test",
-  INTERNAL_API_TOKEN: "test-internal-token",
-  WEBHOOK_SECRET_ENCRYPTION_KEY: "Y1ZTGTcYbe30GZJebys9w7T3OYZNKewuOH3SUCEdRQk=",
-});
-
 const pool = new Pool({ connectionString: databaseUrl, max: 1 });
-const app = buildApp(config, pool);
+
+function baseConfig() {
+  return {
+    DATABASE_URL: databaseUrl,
+    NODE_ENV: "test",
+    INTERNAL_API_TOKEN: "test-internal-token",
+    WEBHOOK_SECRET_ENCRYPTION_KEY: "Y1ZTGTcYbe30GZJebys9w7T3OYZNKewuOH3SUCEdRQk=",
+  };
+}
+
+const app = buildApp(loadConfig(baseConfig()), pool);
+const wildcardApp = buildApp(loadConfig({ ...baseConfig(), CORS_ALLOW_ORIGINS: "*" }), pool);
 
 test.after(async () => {
   await app.close();
+  await wildcardApp.close();
   await pool.end();
 });
 
@@ -51,6 +56,29 @@ test("a simple request from an allowed origin carries the CORS headers", async (
 
 test("a disallowed origin gets no CORS headers", async () => {
   const res = await app.inject({ method: "GET", url: "/healthz", headers: { origin: "http://evil.example" } });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.headers["access-control-allow-origin"], undefined);
+});
+
+test("CORS_ALLOW_ORIGINS=* reflects any origin (LAN IP included) with credentials", async () => {
+  const origin = "http://10.1.206.54:5174";
+  const preflight = await wildcardApp.inject({
+    method: "OPTIONS",
+    url: "/v1/auth/login",
+    headers: { origin, "access-control-request-method": "POST" },
+  });
+  assert.equal(preflight.statusCode, 204);
+  assert.equal(preflight.headers["access-control-allow-origin"], origin);
+  assert.equal(preflight.headers["access-control-allow-credentials"], "true");
+
+  const simple = await wildcardApp.inject({ method: "GET", url: "/healthz", headers: { origin } });
+  assert.equal(simple.statusCode, 200);
+  assert.equal(simple.headers["access-control-allow-origin"], origin);
+  assert.equal(simple.headers["access-control-allow-credentials"], "true");
+});
+
+test("an origin-less request (no Origin header) gets no CORS headers even with *", async () => {
+  const res = await wildcardApp.inject({ method: "GET", url: "/healthz" });
   assert.equal(res.statusCode, 200);
   assert.equal(res.headers["access-control-allow-origin"], undefined);
 });

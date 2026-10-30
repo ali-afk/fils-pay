@@ -42,7 +42,10 @@ export interface Config {
   /** Browser origins allowed to call the API with credentials (CORS). The
    *  merchant dashboard (:5173) and ops console (:5174) are cross-origin to
    *  the API in every local setup, so without this list the browser silently
-   *  blocks every dashboard request at runtime — unit tests never see it. */
+   *  blocks every dashboard request at runtime — unit tests never see it.
+   *  A single "*" entry opts into reflecting any Origin header (LAN IPs,
+   *  hostnames, any port) with credentials; use it only where a fixed
+   *  allow-list is impractical (e.g. a LAN demo box). */
   corsAllowOrigins: string[];
 
   /** Cookie carrying an `admin_sessions` token. A completely separate name,
@@ -235,10 +238,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     cookieName: env.COOKIE_NAME ?? "fp_sid",
     cookieSecure: parseBoolEnv(env.COOKIE_SECURE, nodeEnv === "production"),
 
-    corsAllowOrigins: (env.CORS_ALLOW_ORIGINS ?? "http://localhost:5173,http://localhost:5174")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    corsAllowOrigins: [
+      ...new Set(
+        (env.CORS_ALLOW_ORIGINS ?? "http://localhost:5173,http://localhost:5174")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ],
 
     adminCookieName: env.ADMIN_COOKIE_NAME ?? "fp_admin_sid",
     adminSessionTtlHours: parseIntEnv(env.ADMIN_SESSION_TTL_HOURS, 8),

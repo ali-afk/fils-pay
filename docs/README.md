@@ -17,7 +17,7 @@ most historical bugs are fixed; the ledger is the honest remainder.
   to end, fresh-DB migrations, settlement/money fixes, webhook signing, OTP +
   callback hardening, admin gates, ops Dockerfiles + compose, seed repair, the
   demo tooling, and docs. Full register: `CHANGELOG.md`.
-- **Still open:** 60 confirmed findings — the two that matter most are
+- **Still open:** 61 confirmed findings — the two that matter most are
   **C-1** (`NetPayableFils` computes payouts in `float32`) and **C-2**
   (refunds never flow into settlement/payouts/reconciliation; the admin's
   `/internal/refund-adjustment` route does not exist). See `docs/bugs/`.
@@ -137,7 +137,7 @@ docker compose -f ops/docker-compose.yml up -d api settlement reporting
 → `VITE_ADMIN_API_BASE_URL` (+ `VITE_WEB_BASE_URL` for impersonation links).
 The value is inlined at dev-start/build — so a **built** bundle needs a rebuild
 to repoint, and `localhost` always means the *viewer's* machine. The API's
-`CORS_ALLOW_ORIGINS` must include wherever a panel is served.
+`CORS_ALLOW_ORIGINS` must include wherever a panel is served — set `CORS_ALLOW_ORIGINS=*` (reflects any origin, sandbox/LAN) or a fixed list of panel origins. On plain-HTTP (non-TLS) hosts also set `COOKIE_SECURE=false`, or the session cookie is rejected and login silently never sticks.
 
 **Demo script:** `scripts/demo/admin-login.hurl` (hurl) — one command for the
 admin login → OTP → authed call against a dev-posture api

@@ -41,5 +41,22 @@ comment promised.
   - OPTIONS preflight → **204** with the allow headers.
   - `Origin: http://evil.example` → no CORS headers (locked).
 
+## Related variant — LAN / plain-HTTP panel origins (2026-10-30)
+
+Running a panel from a machine’s LAN IP (e.g. `http://10.1.206.54:5174` calling
+`http://10.1.206.54:3000`) fails login at the preflight step with
+`No 'Access-Control-Allow-Origin' header` because `CORS_ALLOW_ORIGINS` defaults
+to the two `localhost` origins. After CORS is fixed, a second failure follows on
+plain-HTTP hosts: `cookieSecure` defaults to `true` under `NODE_ENV=production`
+(`ops/.env.docker`), so the browser refuses the session cookie and login never
+sticks.
+
+Fix (code landed in the CORS plugin, ledger `docs/bugs/L-9.md`):
+`CORS_ALLOW_ORIGINS=*` now reflects any Origin header with credentials, so one
+deployment works from localhost, LAN IPs or hostnames without enumerating
+machines (an explicit allow-list still works). On plain-HTTP hosts set
+`COOKIE_SECURE=false`, and point `VITE_ADMIN_API_BASE_URL`/`VITE_API_BASE_URL`
+at the LAN API (rebuild or set before `vite dev`).
+
 ## Evidence
 Commit `(cors) dashboards reach the api cross-origin`, this batch.

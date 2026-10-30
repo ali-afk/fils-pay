@@ -44,7 +44,7 @@ B9/FP-209 (refund row lock), B11 (outbound sign-raw), B13 (cancel scope),
 B16 (callback dedup), B18 (Bahrain window), B19 (test-mode isolation),
 B22 (sargable analytics), B23 (keyset export), B24 (Dockerfiles),
 F1 (route wired), F3 (refund webhook), F4 (web drawer), F5 (reason/matview),
-plus the runtime fixes added after the audit: **dashboard CORS**, **web `/`
+plus the runtime fixes added after the audit: **dashboard CORS** (incl. the `CORS_ALLOW_ORIGINS=*` any-origin mode for LAN panels), **web `/`
 root redirect**, **dispatcher LISTEN reconnect**, **compose POSTGRES_URL
 override**, and the amended seed (alpha rate, test-mode isolation).
 

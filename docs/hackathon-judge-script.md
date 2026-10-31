@@ -20,10 +20,10 @@ Then pick the cut that fits the time you actually have.
 ## 1. Two-minute elevator pitch
 
 **What it is.** A monorepo (npm workspaces + one Go service) around a single
-Postgres 16 database. Five apps:
+Postgres 18 database. Five apps:
 
 - `apps/api` — TypeScript/Fastify. Merchant + admin HTTP API, auth (password
-  + OTP), payments, payment links, webhooks, acquirer client.
+  - OTP), payments, payment links, webhooks, acquirer client.
 - `apps/settlement` — Go daemon. Nightly batch close, fees, payouts, scheme
   file export, balance cache. Talks over its own authenticated internal HTTP
   API on `:8091`.

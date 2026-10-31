@@ -5,11 +5,12 @@
 `docs/incidents/` (5), `docs/perf/` (2), git at HEAD `3ef491e` and
 `origin/fix/panel-cors-any-origin`. Every claim below carries a provenance mark.
 
-**How to use this file:** **Part A is the script — read it aloud.** B/C/D are
+**How to use this file:** **Part A is the script — read it aloud.** B/C/E are
 speaker notes to study and to answer Q&A: Part B explains the bugs, Part C dives
 into the performance features (the *how* and *why* judges ask about), Part D
-lists every feature that was missing from the project and what we did about it.
-The appendix holds the full 61-bug tally tables.
+lists every feature that was missing from the project and what we did about it,
+Part E covers architecture/money/settlement + the flag story + canonical
+corrections. The appendix holds the full 61-bug tally tables.
 
 > ⚠️ **Checkout warning (read before the demo):** the committed `main` branch
 > does **not** contain the runtime fixes. `plugins/cors.ts` is missing, the
@@ -307,6 +308,7 @@ Read these before Q&A. Each entry: what it is, where, why it matters.
   `occurred_at`** `[U]+[P]`: a refund replayed near midnight lands in the next
   day's bucket.
 
+
 ---
 
 # PART C — Speaker notes: performance features, the how and the why
@@ -546,6 +548,7 @@ API. `[R]-approved` plan content.
   that isn't there. (Submission doc says the same: "no graceful HTTP shedding
   or rate-limit plugin yet".)
 
+
 ---
 
 # PART D — Features that were missing from the project: what we found, what we implemented
@@ -605,6 +608,87 @@ are the gaps found `[V]` and what we did about them.
   `SEED_SIZE=full` (admin-and-ops-gap plan).
 - **The 60 open tracked bugs** — ordered by money risk (C → H → M → R → …),
   pages 2+ of the appendix.
+
+---
+
+# PART E — Pitch essentials: architecture, money, settlement, the flag
+
+Migrated from `docs/hackathon-judge-script.md` and made **roundup-canonical** —
+where the two disagree, this file wins (see E6). Brief, speaker-note depth.
+
+## E1 · Architecture — "the database is the bus" `[U]`
+
+- Single Postgres (16 today). No service-to-service HTTP between api, reporting
+  and settlement, except the settlement worker's authenticated internal API on
+  `:8091` (`SETTLEMENT_INTERNAL_TOKEN`).
+- Cross-service work is a **transactional outbox**: the event row is written in
+  the same transaction as the business change, so it commits or rolls back
+  atomically — no half-applied side effects. Consumers keep a transactional
+  cursor; delivery is at-least-once with exponential backoff.
+- `LISTEN/NOTIFY` wakes consumers (dispatcher reconnects on channel drops, C-9).
+
+## E2 · The money model `[U]`
+
+- Bahraini Dinar has **three** decimals: 1 BD = 1000 fils. Two-decimal thinking
+  is the #1 bug source in this domain (a settlement dry run was off 4 fils on
+  30 lines).
+- ADR-0001: integer fils everywhere — `BIGINT _fils` columns, branded `Fils`
+  (TS) / `money.Fils` (`int64`, Go). One parser (`parseBhdToFils`), rates as
+  integer basis points, one rounding (half-to-even), `allocateRemainder` splits
+  so children sum exactly to the parent.
+- Double-entry ledger (deferred constraint, migration 0007); corrections are
+  new entries dated to the period they correct; `merchant_balances` is a
+  rebuildable cache (ADR-0004).
+
+## E3 · Settlement mechanics `[U]`
+
+- Business day = midnight–midnight Asia/Bahrain (UTC+3, no DST); the daemon
+  closes the previous day shortly after local midnight.
+- Lifecycle: **close** claims unbatched captures and computes gross/fee/net;
+  **pay** posts payout legs; **notify** enqueues `settlement.paid`. Re-running
+  a day is safe.
+- The card scheme settles in two decimals → each export line is truncated to a
+  multiple of 10 fils and the residue journaled to suspense (ADR-0002), so the
+  scheme statement ties to ours.
+- Fees per capture event (not per batch total): `fee_schedules`, fallback
+  `merchants.mdr_bps`, discounts reduce the MDR base.
+
+## E4 · The hackathon story — the part judges remember `[U]`
+
+- The repo is a mystery hunt: three messages hidden in empty commits
+  (base64 → Vigenère → AES) decode to
+  **`FLAG{order_of_the_prompt_never_read_the_diff}`**.
+- Planted bugs = "members of the Order", marked by "Claude says" comments and
+  locked in by tests asserting the *wrong* behaviour — fixing meant proving the
+  test wrong.
+- Trail: `docs/EXPLANATIONS.md` (fixed, B1–B24/F1–F5/M1–M2) and `docs/bugs/`
+  (honest remainder). Saying "we know what's still broken and where" is a
+  strength — name C-1/C-2.
+
+## E5 · Likely judge questions (brief, honest answers) `[U]`
+
+| Question | Answer |
+| --- | --- |
+| Why is money not a float? | 1 BD = 1000 fils; ADR-0001 integer fils, one parser, one rounding, half-to-even. Float on money is a review blocker. |
+| How do the services talk? | They mostly don't — shared Postgres, transactional outbox, `LISTEN/NOTIFY`, one internal HTTP API on settlement. |
+| What if the outbox row fails? | It can't half-fail — inserted in the same transaction as the write. |
+| How is delivery guaranteed? | At-least-once + exponential backoff; transactional consumer cursor; receivers dedupe on `Webhook-Delivery-Id`. Exactly-once isn't promised. |
+| Why is CSV export in-memory? | Date-range filter keeps result sets small; streaming needs resumable downloads the frontend lacks. |
+| What's still broken? | `docs/bugs/` 60 open; money-critical C-1 (`float32` payout) and C-2 (refunds not netted into settlement). |
+
+## E6 · Canonical corrections (roundup wins; say these confidently)
+
+- **Postgres is 16 today, not 18.** PG18 (**not shipped**) is a *planned*
+  upgrade (C-4): if we had it, its `io_method=io_uring` async I/O would speed
+  the batch reads in settlement/reporting (seq scans, COPY, VACUUM) — **not**
+  the interactive path, which stays index-bound. Same for Bun (C-5) and the
+  throughput levers in C-12: mention them as "specified, not shipped; if it were
+  here it would buy A/B/C" — never claim them as done.
+- Migrations on `main` end at **0072**; 0073–0077 live on the fix branch.
+- **Do not claim a green test suite** at this HEAD: pre-existing failures on
+  `chk_refunds_reason_not_null` (refunds) and dispatcher backoff jitter —
+  see `docs/bug-explanations-2026-10-30.md` Part C. Say "documented,
+  pre-existing failures, our changes add none."
 
 ---
 

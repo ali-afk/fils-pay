@@ -137,6 +137,8 @@ Status: **SHIPPED** (in code) / **MEASURED** (evidence) / **PLANNED** (spec'd) /
 
 ### C-13 · Rate limits — what exists, what we tested — **MEASURED `[V]` + 2 OPEN findings**
 
+> **If asked "what were your rate limits?" — answer in one breath:** "We run **no global HTTP rate-limit plugin**. Rate limiting is application-level on the OTP path only: **5 guesses** per challenge on `otp/verify` → `429` with a session revoke, and **1 resend per 30 s** on `otp/resend` → `429`. Our load test never saw a 429 because it exercised the read endpoints, which are deliberately unbounded — then we probed the limiter itself and found the 5-guess cap does **not** hold under parallel load (a 40-guess burst evaluated 35–39), an open finding with a one-statement fix."
+
 - **No global HTTP rate-limit plugin** `[V]`. Limits are OTP-path only, per-challenge, DB-backed: **verify = max 5 guesses** → `429` + revoke (`auth.ts:158`) · **resend = 1×/30 s** from challenge creation → `429` (`auth.ts:214`).
 - Why FP-209 saw zero 429s: it hit only read endpoints, which are **unthrottled by design** — zero 429s ≠ rate-limit evidence.
 - Tested `[V] otpRateLimit.test.ts` (real Postgres): sequential **PASS** (5× 401 → 429) · resend **PASS**. But a **40-guess parallel burst → 35–39 evaluated vs budget 5** — cap defeated under load, **H-7 reproduced**.

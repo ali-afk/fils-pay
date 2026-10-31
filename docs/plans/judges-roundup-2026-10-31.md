@@ -136,7 +136,13 @@ toolchain plan splits routes and vendor chunks and moves from Vite 5 to 7.
 **[EXPAND: 30 s on the Vite plan]**
 Honesty note: of these, the one with a measurement in production is the
 Postgres tuning work; the rest are evidence-backed plans — decided, specified,
-ready to land."
+ready to land. **[Q&A: 'what req/s after the features land?' — see C-12:
+~100–300 req/s on 0.5 vCPU, ~300–600 on the 1 vCPU host, framed as an
+estimate anchored to the measured 34 req/s floor, with the k6 ramp-up as the
+proof. 'what about rate limits?' — see C-13: limits are OTP-path-only (5
+guesses + 30 s resend throttle, both verified); a 40-guess parallel burst
+evaluated 35–39 vs a budget of 5 — the H-7 race, open finding with a
+one-statement fix. Do not claim a rate-limit plugin; there isn't one.]**"
 
 ## 6:00–8:00 · The long tail, and the process that keeps us honest
 
@@ -449,6 +455,96 @@ defaults to `keepalive_timeout` in minutes — mismatched timeouts waste socket
 reuse. The nginx plan's `proxy_set_header Connection ""` + `proxy_http_version
 1.1` is the classic fix; the Caddy plan sets `keepAliveTimeout 60000` on the
 API. `[R]-approved` plan content.
+
+### C-12 · What throughput to expect once the missing features land — **ESTIMATE, not measured**
+
+- **Say this first:** *"Our measured 34 req/s is a floor, not a ceiling — the
+  FP-209 run never saturated the box."* `[V]` the run held 28 VUs at 0.5
+  vCPU/512 MB for 10 min with **0 errors and peak RSS 236 MB of 512 MB** —
+  the server was not under strain; the run was VU-limited.
+- **The real ceiling today is `pgPoolMax = 5`, not CPU or memory.** `[V]`
+  `config.ts:206` default. With p50 ~41 ms per read query, five connections cap
+  throughput around **~120 req/s** (`5 / 0.041`) — and slow CSV exports hold
+  connections, so the concurrent number is lower. The test pushed only ~34
+  req/s because 28 VUs never asked for more.
+- **What each planned feature buys (ESTIMATE):**
+  | Feature (plan) | Effect on req/s |
+  | --- | --- |
+  | Pool raise + idle-connection shedding | unblocks the 5-conn ceiling — the biggest gain |
+  | Bun runtime (C-5) | ~2–3× on I/O-bound JS request handling |
+  | `transaction_events` index + outbox purge (C-6) | prevents long-run degradation — protects the number, not peak |
+  | PG18/io_uring (C-4), Caddy/nginx | DB/proxy-level; marginal at this traffic |
+- **Expected numbers (ESTIMATE, reasoned from the measured latency floor):**
+  - Same 0.5 vCPU after features: **~100–300 req/s** sustained mixed-read
+    traffic; CSV export stays ~1 req/s per VU (memory-sized by design).
+  - Real 1 vCPU hosted box: **~300–600 req/s**; synthetic happy-path peak
+    ~1k req/s on one core for small reads.
+  - True saturation is **DB-bound**: roughly `~pool / (p50 ~30–40 ms)`, a few
+    hundred req/s, before Postgres or the single core gives out.
+- **How to say it to a judge (30 s):**
+  > "The 34 req/s we measured at 28 concurrent users was never a ceiling — the
+  > box sat at under half its memory and zero errors. The binding limit was our
+  > SQL pool of five connections, not the hardware. Once the planned features
+  > land — a larger pool plus connection shedding, the Bun runtime, the
+  > transaction index and outbox retention — we estimate ~100–300 req/s
+  > sustained on the 0.5 vCPU box and a few hundred more on the 1 vCPU host.
+  > That's an estimate, not a measurement: the honest next step is a k6 ramp to
+  > find the actual saturation point, which is on our submission-day checklist."
+- **Honesty note:** every number in this section is a reasoned estimate anchored
+  to the measured FP-209 latencies `[V]` — none of it is a claimed measurement.
+  If a judge asks for a hard number, give the estimate and offer the k6 ramp-up
+  run as the proof. Do not present estimates as measurements.
+
+### C-13 · Rate limits — what exists, what we tested — **MEASURED `[V]` + 2 OPEN findings**
+
+- **What rate limits actually exist:** there is **no global HTTP rate-limit
+  plugin** — `@fastify/rate-limit` is not a dependency `[V] apps/api/package.json`.
+  Rate limiting is **application-level, per-OTP-challenge, DB-backed**, and only
+  on the auth path:
+  - `POST /v1/auth/otp/verify` (+ admin twin): **max 5 wrong guesses per
+    challenge**, then `429 too_many_attempts` and the pending session is
+    revoked — `routes/auth.ts:158` `[V]`, default `config.ts:215`
+    (`otpMaxAttempts = 5`).
+  - `POST /v1/auth/otp/resend`: **1 per 30 s window measured from challenge
+    creation** → `429 resend_too_soon` — `routes/auth.ts:214` `[V]`.
+- **Why the load test never saw a 429:** FP-209 pushed only the authenticated
+  read endpoints (export / list / settlement summary), which are **unthrottled
+  by design** — the rate limits live on the OTP path, and no load test touched
+  it. Zero errors in FP-209 is therefore *not* evidence about rate limiting.
+- **What we tested `[V]`:** new route-level test
+  `apps/api/src/routes/otpRateLimit.test.ts` (real Postgres, Fastify inject):
+  - Sequential: 5 wrong guesses → each `401 invalid_code`; 6th → `429
+    too_many_attempts`, session revoked. **PASS.**
+  - Resend inside the 30 s challenge window → `429 resend_too_soon`. **PASS.**
+  - Concurrent load: 40 parallel wrong guesses against ONE challenge with
+    budget = 5 → **35–39 evaluated (401) per run** (runs: 35, 37, 39, 36
+    `[V] reproduced`). The cap does **not** hold under parallel load.
+- **Why it breaks under load — H-7 (check-then-increment race) `[V]`
+  `routes/auth.ts:156-160`:** the handler reads `attempt_count`, checks it,
+  verifies the code, and only then increments — no row lock, no atomic
+  `UPDATE … WHERE attempt_count < max_attempts RETURNING …`. Concurrent
+  requests all read `attempt_count = 0` and all get evaluated. One-statement
+  fix, filed as H-7.
+- **Companion finding H-8:** `/otp/resend` issues a **fresh** challenge via
+  `issueChallenge` with `attempt_count = 0`, so a resend every 30 s keeps
+  resetting the 5-guess budget — contrary to its own comment.
+- **How to say it to a judge (~25 s):**
+  > "Rate limiting is deliberately scoped to the OTP auth path — our read
+  > endpoints are unthrottled, which is why the load test reports zero 429s:
+  > it never touched a rate-limited surface. We probed the limiter directly
+  > against a real database: sequential brute-force is capped at five attempts
+  > with a 429 and a session revoke, and resend is throttled to once per 30
+  > seconds — both verified. But the interesting result: a 40-guess parallel
+  > burst evaluated 35–39 attempts against a budget of five. The counter is a
+  > check-then-increment without a row lock, so the cap doesn't hold under
+  > concurrency. It's a filed open finding (H-7) with a one-statement fix —
+  > claim the challenge atomically before verifying."
+- **Honesty note:** the sequential cap and the resend throttle are **verified
+  behavior**; the concurrency result is a **reproduced measurement** showing the
+  limit is bypassable. Present it as an open finding with a spec'd fix — do not
+  claim the limiter is load-safe, and do not claim an HTTP rate-limit plugin
+  that isn't there. (Submission doc says the same: "no graceful HTTP shedding
+  or rate-limit plugin yet".)
 
 ---
 
